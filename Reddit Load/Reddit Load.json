@@ -14,8 +14,7 @@
     "--enable-job-insights" : "false",
     "--job-language" : "python",
     "--TempDir" : "s3://aws-glue-assets-805531349147-us-west-2/temporary/",
-    "--enable-glue-datacatalog" : "true",
-    "library-set" : "analytics"
+    "--enable-glue-datacatalog" : "true"
   },
   "maxRetries" : 0,
   "allocatedCapacity" : 0,

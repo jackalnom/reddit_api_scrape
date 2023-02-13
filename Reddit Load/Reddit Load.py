@@ -3,6 +3,7 @@ import json
 import boto3
 from datetime import datetime
 from botocore.exceptions import ClientError
+import pandas as pd
 
 def get_reddit_secrets(session):
     secret_name = "reddit_auth_secrets"
@@ -48,8 +49,9 @@ def auth_reddit(reddit_secrets):
 
     return headers
 
-def print_reddit_json(res):
+def clean_data(res):
     json_res = res.json()
+    cleaned = []
 
     # Example parsing we can do of the structure json structure.
     posts = json_res['data']['children']
@@ -57,25 +59,25 @@ def print_reddit_json(res):
         post_data = post['data']
 
         title = post_data['title']
-        user = post_data['author_fullname']
-        upvote_ratio = post_data['upvote_ratio']
+        author = post_data['author_fullname']
+        score = post_data['score']
 
-        print(f"{title} by {user}: {upvote_ratio}")
+        cleaned.append([title, author, score])
 
-def write_json_to_s3_with_timestamp(session, body):
+    return pd.DataFrame(cleaned, columns=['title', 'author', 'score'])
+
+def write_to_s3_with_timestamp(session, prefix, body, ext):
     # Creating S3 Resource From the Session.
     s3 = session.resource('s3')
 
     now = datetime.now()  # current date and time
 
     date_time = now.strftime("%m-%d-%Y, %H:%M:%S")
-    print("date and time:", date_time)
 
-    object = s3.Object('reddit-dataisbeautiful-top', f"{date_time}.json")
+    object = s3.Object('reddit-dataisbeautiful-top', f"{prefix} {date_time}.{ext}")
 
     # We will just save the entire raw json response into S3.
     result = object.put(Body=body)
-
 
 # Initialize our AWS Session
 session = boto3.Session()
@@ -83,8 +85,9 @@ session = boto3.Session()
 headers = auth_reddit(get_reddit_secrets(session))
 
 res = requests.get("https://oauth.reddit.com/r/dataisbeautiful/top", headers=headers)
-# just for example debugging purposes, let's print out the json in a pretty way. This functionally does nothing
-# for the script though.
-print_reddit_json(res)
+# Print out raw for later debugging or if we want to re-process data
+write_to_s3_with_timestamp(session, "raw", res.text, "json")
 
-write_json_to_s3_with_timestamp(session, res.text)
+# Print out cleaned data. Can ingest with a notebook or into a database from here.
+cleaned_data = clean_data(res)
+write_to_s3_with_timestamp(session, "clean", cleaned_data.to_csv(), "csv")
