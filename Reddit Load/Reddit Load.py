@@ -66,15 +66,15 @@ def clean_data(res):
 
     return pd.DataFrame(cleaned, columns=['title', 'author', 'score'])
 
-def write_to_s3_with_timestamp(session, prefix, body, ext):
+def write_to_s3_with_timestamp(session, postfix, body, ext):
     # Creating S3 Resource From the Session.
     s3 = session.resource('s3')
 
     now = datetime.now()  # current date and time
 
-    date_time = now.strftime("%m-%d-%Y, %H:%M:%S")
+    date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    object = s3.Object('reddit-dataisbeautiful-top', f"{prefix} {date_time}.{ext}")
+    object = s3.Object('reddit-dataisbeautiful-top', f"{date_time} - {postfix} .{ext}")
 
     # We will just save the entire raw json response into S3.
     result = object.put(Body=body)
