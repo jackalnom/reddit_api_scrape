@@ -59,12 +59,13 @@ def clean_data(res):
         post_data = post['data']
 
         title = post_data['title']
-        author = post_data['author_fullname']
+        author = post_data['author']
         score = post_data['score']
+        permalink = post_data['permalink']
 
-        cleaned.append([title, author, score])
+        cleaned.append([title, author, score, permalink])
 
-    return pd.DataFrame(cleaned, columns=['title', 'author', 'score'])
+    return pd.DataFrame(cleaned, columns=['title', 'author', 'score', 'permalink'])
 
 def write_to_s3_with_timestamp(session, postfix, body, ext):
     # Creating S3 Resource From the Session.
